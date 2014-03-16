@@ -1,0 +1,346 @@
+<!DOCTYPE>
+<html>
+	<head>
+		<title>Tic Tac Toe</title>
+		<style>
+			.field {
+				border: solid 1px black;
+				display: inline-block;
+				margin: 7px;
+				height: 40px;
+				width: 40px;
+			}
+
+			.field--cross {
+				background-color: red;
+			}
+
+			.field--nought {
+				background-color: green;
+			}
+
+		</style>
+	</head>
+
+	<body>
+		<h1>TicTacToe</h2>
+		<ul>
+			<li><span style="color: green;">Noughts</span></li>
+			<li><span style="color: red;">Crosses</span></li>
+		</ul>
+		<div id="tictactoe">
+		</div>
+		<button id="reset" type="button">Reset</button>
+
+
+		<script>
+			function Field() {
+				this.dom = null;
+				this.index = null;
+				this.type = null;
+				this.isClicked = false;
+			}
+
+			Field.prototype = {
+				constructor : Field,
+
+				setType : function (type) {
+					this.type = type;
+					this.dom.classList.add('field--' + type);
+				},
+
+				setIndex : function (index) {
+					this.index = index;
+					this.dom.setAttribute('data-field-index', index);
+				},
+
+				click : function () {
+					this.dom.classList.add('clicked');
+					this.isClicked = true;
+				},
+
+				equals : function (otherField) {
+					if (otherField instanceof Field === false) {
+						return false;
+					}
+
+					return (this.type === otherField.type);
+
+				},
+
+				valueOf : function () {
+					return this.type;
+				}
+			}
+
+			function TicTacToe(id) {
+				this.init.call(this, Array.prototype.slice.call(arguments));
+			}
+
+			TicTacToe.prototype = {
+				constructor : TicTacToe,
+				init : function (id) {
+
+					this.id = id;
+
+					this.rows = 3;
+
+					this.maxFields = this.rows * this.rows;
+
+
+					this.fieldType = {
+						0 : 'nought',
+						1 : 'cross'
+					}
+
+					this.prepareGame();
+
+				},
+
+				prepareGame : function () {
+
+					this.ctx = document.getElementById(this.id);
+					this.model = null;
+					this.fields = null;
+					this.playCounter = 0;
+					this.fieldDomMapping = {};
+
+					this.buildGameModel();
+					this.buildGameBoard();
+
+					this.bindEvents();
+				},
+
+
+				buildGameModel : function () {
+
+					this.model = [];
+					this.fields = [];
+
+					for (var row = 0; row < this.rows; row++) {
+
+						this.model[row] = [];
+
+						for (var col = 0; col < this.rows; col++) {
+							var newField = this.createField();
+
+							this.model[row].push(newField);
+							this.fields.push(newField);
+						}
+
+						
+					}
+
+				},
+
+
+				buildGameBoard : function () {
+
+					for (var rowCounter = 0; rowCounter < this.rows; rowCounter++) {
+
+						var row = document.createElement('div');
+						row.className = 'row row--' + rowCounter;
+
+						for (var colCounter = 0; colCounter < this.rows; colCounter++) {
+							var domField = this.createDomField();
+							var col = domField;
+							var fieldIndex = (rowCounter * this.rows) + colCounter;
+							var field = this.model[rowCounter][colCounter];
+
+							field.dom = domField;
+							field.setIndex(fieldIndex);
+							
+
+							this.fieldDomMapping[fieldIndex] = field;
+
+							row.appendChild(col);
+
+						}
+
+
+						this.ctx.appendChild(row);
+
+					}
+
+				},
+
+				createField : function () {
+					return new Field();
+				},
+
+				createDomField : function () {
+					var field = document.createElement('div');
+
+					field.className = 'field';
+
+					return field;
+				},
+
+				getFieldsByRow : function (rowNr) {
+					return this.model[rowNr];
+				},
+
+				getFieldsByCol : function (colNr) {
+
+					var col = [];
+
+					for (var row = 0; row < this.rows; row++) {
+						col.push(this.model[row][colNr]);
+					}
+
+					return col;
+
+				},
+
+				fieldClick : function (event) {
+
+			
+					if (event.target.classList.contains('field')) {
+						var domField = event.target;
+
+						if (domField.classList.contains('clicked')) {
+							return true;
+						}
+
+						var fieldIndex = domField.getAttribute('data-field-index');
+						var field = this.getFieldByIndex(fieldIndex);
+
+
+						field.click();
+						field.setType(this.getFieldType(this.playCounter));
+
+						var isWinner = this.isWinner(fieldIndex);
+
+						if (isWinner) {
+							return true;
+						}
+
+						this.playCounter += 1;
+
+						if (this.playCounter === this.maxFields) {
+							alert('It\'s a tie');
+						}
+
+
+					}
+				},
+
+
+				bindEvents : function () {
+
+					this.fieldClickBound = this.fieldClick.bind(this);
+
+					this.ctx.addEventListener('click', this.fieldClickBound);
+				},
+
+				getFieldByIndex : function (index) {
+					return this.fieldDomMapping[index];
+				}, 
+
+				getFieldType : function (counter) {
+					return this.fieldType[counter % 2];
+				},
+
+				getColByFieldIndex : function (fieldIndex) {
+					return fieldIndex % this.rows;
+				},
+
+				getRowByFieldIndex : function (fieldIndex) {
+					return Math.floor(fieldIndex / this.rows);
+				},
+
+				isWinningRow : function (fieldIndex) {
+					var fields = this.getFieldsByRow(this.getRowByFieldIndex(fieldIndex));
+					return this.isWinningGroup(fields);
+				},
+
+				isWinningCol : function (fieldIndex) {
+					var fields = this.getFieldsByCol(this.getColByFieldIndex(fieldIndex));
+					return this.isWinningGroup(fields);
+				},
+
+				isWinningGroup : function (fields) {
+
+					var type = fields[0].type;
+
+					if (type === null) {
+						return false;
+					}
+
+					if (fields[0].equals(fields[1]) && fields[0].equals(fields[2])) {
+						return type;
+					} else {
+						return false;
+					}	
+
+				},
+
+				isWinningDiag : function (fieldIndex) {
+
+					var centerField = this.getFieldByIndex(4),
+						rows = this.rows;
+
+
+					if (centerField.isClicked === false) {
+						return false;
+					}
+
+					var matchType = centerField.type,
+						firstDiagCounter = 1;
+						secondDiagCounter = 1;
+
+					for (var i = 0; i < rows; i+= 2) {
+
+						// First diag
+						var field = this.getFieldByIndex(i * rows + i);
+
+						if (field.isClicked && field.type === matchType) {
+							firstDiagCounter += 1;
+						}
+
+						// Second diag
+						field = this.getFieldByIndex(i * rows + ((rows -1) - i));
+						
+						if (field.isClicked && field.type === matchType) {
+							secondDiagCounter += 1;
+						}
+					}
+
+					return (firstDiagCounter === rows || secondDiagCounter === rows);
+
+				},
+
+				isWinner : function (fieldIndex) {
+
+					var type = this.getFieldByIndex(fieldIndex).type;
+
+					// Check row
+					if (this.isWinningRow(fieldIndex) !== false
+						|| this.isWinningCol(fieldIndex) !== false 
+						|| this.isWinningDiag(fieldIndex) !== false) {
+
+						alert(type + ' wins!');
+						return true;	
+					}
+
+					return false;
+
+				},
+
+				reset : function () {
+					this.ctx.removeEventListener('click', this.fieldClickBound);
+					this.ctx.innerHTML = '';
+					this.prepareGame();
+				}
+
+			}
+
+			var game = new TicTacToe('tictactoe');
+		
+
+			document.getElementById('reset').addEventListener('click', game.reset.bind(game));
+
+		</script>
+	</body>
+
+</html>
