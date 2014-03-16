@@ -1,0 +1,22 @@
+/* base */
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+/* objects */
+
+.field {
+	border: solid 1px black;
+	display: inline-block;
+	margin: 7px;
+	height: 40px;
+	width: 40px;
+}
+
+.field--cross {
+	background-color: red;
+}
+
+.field--nought {
+	background-color: green;
+}
