@@ -212,6 +212,7 @@
 						var isWinner = this.isWinner(fieldIndex);
 
 						if (isWinner) {
+							this.reset();
 							return true;
 						}
 
@@ -219,6 +220,7 @@
 
 						if (this.playCounter === this.maxFields) {
 							alert('It\'s a tie');
+							this.reset();
 						}
 
 
